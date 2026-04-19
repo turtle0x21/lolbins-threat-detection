@@ -25,6 +25,12 @@ Desktop.ini
 # Environment variables
 .env
 
+# Database
+*.db
+
+# Logs
+alerts.log
+
 # Model files (large)
 *.pkl
 *.h5
