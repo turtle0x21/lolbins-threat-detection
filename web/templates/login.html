@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — LOLBins Detection</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="auth-wrapper">
+        <div class="glass-panel auth-container">
+            <div class="auth-logo">🛡️</div>
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Sign in to your <span class="text-gradient">Security Workspace</span></p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn-primary">Sign In</button>
+            </form>
+
+            <p class="auth-link">Don't have an account? <a href="/register">Create one</a></p>
+        </div>
+    </div>
+</body>
+</html>

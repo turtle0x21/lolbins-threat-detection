@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — LOLBins Detection</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">🛡️</div>
+                <h1>Security <span class="text-gradient-primary">Control Center</span></h1>
+            </div>
+            <a href="/logout" class="btn-outline">Logout</a>
+        </header>
+
+        <div class="dashboard-grid">
+            
+            <!-- API Key Card -->
+            <div class="glass-panel card-api">
+                <div class="card-header">
+                    <h3>🔑 External Agent Key</h3>
+                    <p>Paste this secret key into your agent's <code>config.json</code> to link it.</p>
+                </div>
+                <div class="api-box-wrapper">
+                    <input id="apikey" readonly value="Loading...">
+                    <button onclick="copyKey()" class="btn-copy" title="Copy to clipboard">Copy</button>
+                </div>
+            </div>
+
+            <!-- Alerts Card -->
+            <div class="glass-panel card-alerts">
+                <div class="card-header">
+                    <h3>🚨 Active Detections</h3>
+                    <p>Real-time machine learning threat analysis from your endpoints.</p>
+                </div>
+
+                <div id="no-alerts" class="empty-state">
+                    <div class="empty-icon">✓</div>
+                    <h4>System Secure</h4>
+                    <p>No LOLBin or GTFObin abuse detected. Start your agent to begin monitoring.</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="alerts-table" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th>Detected At</th>
+                                <th>Command Execution</th>
+                                <th>Threat Level</th>
+                                <th>ML Confidence</th>
+                                <th>Detailed Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        function copyKey() {
+            const input = document.getElementById("apikey");
+            navigator.clipboard.writeText(input.value);
+            const btn = document.querySelector(".btn-copy");
+            btn.textContent = "Copied!";
+            btn.style.background = "rgba(34, 197, 94, 0.2)";
+            btn.style.color = "#4ade80";
+            btn.style.borderColor = "rgba(34, 197, 94, 0.4)";
+            
+            setTimeout(() => {
+                btn.textContent = "Copy";
+                btn.style = ""; // reset styles
+            }, 2000);
+        }
+
+        function severityBadge(severity) {
+            const map = {
+                critical: "badge-critical",
+                high: "badge-high",
+                medium: "badge-medium",
+                low: "badge-low",
+                information: "badge-info"
+            };
+            const cls = map[severity.toLowerCase()] || "badge-low";
+            return `<span class="badge ${cls}">${severity}</span>`;
+        }
+
+        async function load() {
+            try {
+                // Fetch user info (API Key)
+                const res = await fetch("/user_data");
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("apikey").value = data.api_key;
+                }
+
+                // Fetch real-time alerts
+                const alertsRes = await fetch("/alerts");
+                if (alertsRes.ok) {
+                    const alerts = await alertsRes.json();
+                    const noAlerts = document.getElementById("no-alerts");
+                    const table = document.getElementById("alerts-table");
+
+                    if (alerts.length === 0) {
+                        noAlerts.style.display = "flex";
+                        table.style.display = "none";
+                    } else {
+                        noAlerts.style.display = "none";
+                        table.style.display = "table";
+
+                        let html = "";
+                        alerts.forEach(a => {
+                            // Format date nicely: "Mar 23 2026, 14:30:12"
+                            let tsFormated = "—";
+                            if (a.timestamp) {
+                                const d = new Date(a.timestamp);
+                                tsFormated = d.toLocaleString(undefined, {
+                                    month: "short", day: "numeric", 
+                                    hour: "2-digit", minute: "2-digit", second: "2-digit"
+                                });
+                            }
+
+                            const conf = a.confidence !== null && a.confidence !== undefined
+                                ? (a.confidence * 100).toFixed(1) + "%"
+                                : "—";
+                                
+                            html += `<tr>
+                                <td><span class="dt">${tsFormated}</span></td>
+                                <td><code class="cmd">${a.command}</code></td>
+                                <td>${severityBadge(a.severity)}</td>
+                                <td><span style="color:var(--text-muted)">${conf}</span></td>
+                                <td style="color:var(--text-muted); font-size:13px">${a.reason || "—"}</td>
+                            </tr>`;
+                        });
+
+                        document.getElementById("alerts").innerHTML = html;
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load dashboard data:", err);
+            }
+        }
+
+        // Initialize dashboard and poll every 3 seconds
+        load();
+        setInterval(load, 3000);
+    </script>
+</body>
+</html>
